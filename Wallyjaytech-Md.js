@@ -18,9 +18,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.listen(PORT, () => {
     console.log(`
-Don't Forgot To Give Star to my repo at WALLYJAYTECH-MD
-
- Server running on http://localhost:` + PORT)
+WALLYJAYTECH-MD Session Generator
+Server running on http://localhost:` + PORT)
 })
 
 module.exports = app
