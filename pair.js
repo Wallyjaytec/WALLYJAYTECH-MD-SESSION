@@ -1,104 +1,110 @@
-const PastebinAPI = require('pastebin-js'),
-pastebin = new PastebinAPI('EMWTMkQAVfJa9kM-MRUrxd5Oku1U7pgL');
-const {makeid} = require('./id');
-const express = require('express');
-const fs = require('fs');
-let router = express.Router();
-const pino = require("pino");
-const {
-    default: Maher_Zubair,
-    useMultiFileAuthState,
-    delay,
-    makeCacheableSignalKeyStore,
-    Browsers
-} = require("maher-zubair-baileys");
+import express from 'express';
+import { SessionManager } from './sessionManager.js';
+import pn from 'awesome-phonenumber';
 
-function removeFile(FilePath) {
-    if (!fs.existsSync(FilePath)) return false;
-    fs.rmSync(FilePath, { recursive: true, force: true });
-}
+const router = express.Router();
 
 router.get('/', async (req, res) => {
-    const id = makeid();
-    let num = req.query.number;
-
-    async function WALLYJAYTECH_MD_PAIR_CODE() {
-        const { state, saveCreds } = await useMultiFileAuthState('./temp/' + id);
-        try {
-            let Pair_Code = Maher_Zubair({
-                auth: {
-                    creds: state.creds,
-                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
-                },
-                printQRInTerminal: false,
-                logger: pino({ level: "fatal" }).child({ level: "fatal" }),
-                browser: ["Chrome (Linux)", "", ""]
-            });
-
-            if (!Pair_Code.authState.creds.registered) {
-                await delay(1500);
-                num = num.replace(/[^0-9]/g, '');
-                const code = await Pair_Code.requestPairingCode(num);
-                if (!res.headersSent) {
-                    await res.send({ code });
-                }
-            }
-
-            Pair_Code.ev.on('creds.update', saveCreds);
-            Pair_Code.ev.on("connection.update", async (s) => {
-                const { connection, lastDisconnect } = s;
-                if (connection == "open") {
-                    await delay(5000);
-                    let data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
-                    await delay(800);
-
-                    // Create creds.js file content
-                    const credsContent = `module.exports = ${data.toString()};`;
-
-                    // Send as creds.js file instead of JSON
-                    await Pair_Code.sendMessage(Pair_Code.user.id, {
-                        document: Buffer.from(credsContent),
-                        mimetype: 'application/javascript',
-                        fileName: 'creds.js'
-                    });
-
-                    let WALLYJAYTECH_TEXT = `
-╔═══════════════════════
-║  🚀 WALLYJAYTECH-MD 🚀
-╠═══════════════════════
-║ ✅ *PAIRED SUCCESSFULLY*
-║ 
-║ 📁 Your session file "creds.js" has been sent!
-║ 💾 Use this file for WALLYJAYTECH-MD BOT
-║ 
-║ 🌐 *Channel:* https://whatsapp.com/channel/0029Vb64CFeHFxP6SQN1VY0I
-║ 👥 *Main GC:* https://chat.whatsapp.com/HF1NuB6nFBaIwdGWgeGtni
-║ 💻 *Github:* https://github.com/wallyjaytechh
-║ 👨‍💻 *Owner:* https://wa.me/2348144317152
-║ 
-║ ⚠️ *WARNING:* Do not share your creds.js file with anyone!
-║ 🛡️  Keep your session data secure!
-╚═══════════════════════`;
-                    
-                    await Pair_Code.sendMessage(Pair_Code.user.id, { text: WALLYJAYTECH_TEXT });
-
-                    await delay(100);
-                    await Pair_Code.ws.close();
-                    return await removeFile('./temp/' + id);
-                } else if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
-                    await delay(10000);
-                    WALLYJAYTECH_MD_PAIR_CODE();
-                }
-            });
-        } catch (err) {
-            console.log("service restarted");
-            await removeFile('./temp/' + id);
-            if (!res.headersSent) {
-                await res.send({ code: "Service Unavailable" });
-            }
-        }
+    let { number } = req.query;
+    
+    if (!number) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Phone number is required' 
+        });
     }
-    return await WALLYJAYTECH_MD_PAIR_CODE();
+
+    // Clean and validate phone number
+    number = number.replace(/[^0-9]/g, '');
+    const phone = pn('+' + number);
+    
+    if (!phone.isValid()) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Invalid phone number format. Please use full international number without + (e.g., 2348144317152)' 
+        });
+    }
+
+    const e164Number = phone.getNumber('e164').replace('+', '');
+    const sessionManager = new SessionManager(`pair_${e164Number}`);
+    
+    try {
+        const { sock, state } = await sessionManager.initializeConnection();
+        
+        if (!state.creds.registered) {
+            await delay(2000);
+            
+            const pairingCode = await sock.requestPairingCode(e164Number);
+            const formattedCode = pairingCode.match(/.{1,4}/g)?.join('-') || pairingCode;
+            
+            console.log(`📱 Pairing code requested for: ${e164Number}`);
+            
+            // Wait for connection and credentials
+            return new Promise((resolve) => {
+                const connectionHandler = async (update) => {
+                    const { connection, qr } = update;
+                    
+                    if (connection === 'open') {
+                        console.log(`✅ Successfully connected: ${e164Number}`);
+                        sock.ev.off('connection.update', connectionHandler);
+                        
+                        // Wait a bit for credentials to save
+                        await delay(3000);
+                        
+                        const sessionData = sessionManager.getSessionData();
+                        
+                        if (sessionData) {
+                            res.json({
+                                success: true,
+                                message: 'Session created successfully!',
+                                code: formattedCode,
+                                sessionData: {
+                                    clientId: sessionData.me?.id,
+                                    platform: sessionData.me?.platform,
+                                    registered: true
+                                }
+                            });
+                        } else {
+                            res.json({
+                                success: true,
+                                message: 'Pairing code generated! Check your WhatsApp.',
+                                code: formattedCode,
+                                sessionData: null
+                            });
+                        }
+                        
+                        // Don't cleanup immediately - let user use the session
+                        setTimeout(() => sessionManager.cleanup(), 30000);
+                        resolve();
+                    }
+                };
+                
+                sock.ev.on('connection.update', connectionHandler);
+                
+                // Timeout after 2 minutes
+                setTimeout(() => {
+                    sock.ev.off('connection.update', connectionHandler);
+                    if (!res.headersSent) {
+                        res.status(408).json({
+                            success: false,
+                            message: 'Pairing timeout. Please try again.'
+                        });
+                        sessionManager.cleanup();
+                        resolve();
+                    }
+                }, 120000);
+            });
+        }
+        
+    } catch (error) {
+        console.error('Pairing error:', error);
+        sessionManager.cleanup();
+        
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate pairing code. Please try again.'
+        });
+    }
 });
 
-module.exports = router;
+export default router;
