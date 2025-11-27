@@ -21,6 +21,31 @@ function removeFile(FilePath) {
     }
 }
 
+// ✅ ADD: Wait for proper registration
+async function waitForRegistration(sock, timeout = 15000) {
+    return new Promise((resolve) => {
+        const startTime = Date.now();
+        
+        const check = () => {
+            if (sock.authState.creds.registered) {
+                console.log('✅ Device properly registered with WhatsApp');
+                resolve(true);
+                return;
+            }
+            
+            if (Date.now() - startTime > timeout) {
+                console.log('❌ Registration timeout - device not properly registered');
+                resolve(false);
+                return;
+            }
+            
+            setTimeout(check, 1000);
+        };
+        
+        check();
+    });
+}
+
 router.get('/', async (req, res) => {
     // Generate unique session for each request to avoid conflicts
     const sessionId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -126,6 +151,16 @@ router.get('/', async (req, res) => {
 
                 if (connection === 'open') {
                     console.log('✅ Connected successfully!');
+                    
+                    // ✅ WAIT FOR PROPER REGISTRATION
+                    console.log('⏳ Waiting for device registration...');
+                    const isRegistered = await waitForRegistration(sock);
+                    
+                    if (!isRegistered) {
+                        console.log('❌ Device registration failed - cannot send session file');
+                        return;
+                    }
+                    
                     console.log('💾 Session saved to:', dirs);
                     reconnectAttempts = 0;
                     
