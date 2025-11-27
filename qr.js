@@ -182,7 +182,7 @@ router.get('/', async (req, res) => {
                             await sock.sendMessage(userJid, {
                                 document: sessionWallyjaytech,
                                 mimetype: 'application/json',
-                                fileName: 'WALLYJAYTECH-MD-creds.json'
+                                fileName: 'creds.json'
                             });
                             console.log("📄 Session file sent successfully to", userJid);
                             
