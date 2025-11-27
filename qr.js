@@ -63,8 +63,8 @@ router.get('/', async (req, res) => {
                         quality: 0.92,
                         margin: 1,
                         color: {
-                            dark: 'cyan',
-                            light: 'black'
+                            dark: '#000000',
+                            light: '#FFFFFF'
                         }
                     });
 
