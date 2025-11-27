@@ -1,6 +1,6 @@
 import * as mega from 'megajs';
 
-// Mega authentication credentials
+// Mega authentication credentials 
 const auth = {
     email: 'wallyjay111@gmail.com', // Replace with your Mega email
     password: 'Wallyartmedia1@!', // Replace with your Mega password
