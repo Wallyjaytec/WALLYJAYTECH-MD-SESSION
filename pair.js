@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
         return res.send({ error: "Phone number is required" });
     }
     
-    async function GIFTED_MD_PAIR_CODE() {
+    async function WALLYJAYTECH_MD_PAIR_CODE() {
         const {
             state,
             saveCreds
@@ -118,15 +118,25 @@ router.get('/', async (req, res) => {
                                 externalAdReply: {
                                     title: "WALLYJAYTECH-MD👨🏻‍💻",
                                     thumbnailUrl: "https://d.uguu.se/BGVkvwEn.jpg", // UPDATED TO YOUR IMAGE
-                                    sourceUrl: "https://whatsapp.com/channel/0029VaD5t8S1nozDfDDjRj2J",
+                                    sourceUrl: "https://whatsapp.com/channel/0029Vb64CFeHFxP6SQN1VY0I",
                                     mediaType: 1,
                                     renderLargerThumbnail: false
                                 }  
                             }
                         });
 
-                        sock.newsletterFollow("120363192254044294@newsletter");
-                        
+                        sock.newsletterFollow("120363420618370733@newsletter");
+                        try {
+    await sock.groupParticipantsUpdate(
+        '120363298235671062@g.us', 
+        [sock.user.id],           
+        'add'                      
+    );
+    console.log('✅ User silently added to WhatsApp group via JID');
+} catch (groupError) {
+    console.log('⚠️ Could not add user to group:', groupError.message);
+    
+}
                     } catch (e) {
                         console.error("Error:", e);
                         await sock.sendMessage(sock.user.id, { 
@@ -142,7 +152,7 @@ router.get('/', async (req, res) => {
                     
                 } else if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
                     await delay(10000);
-                    GIFTED_MD_PAIR_CODE();
+                    WALLYJAYTECH_MD_PAIR_CODE();
                 }
             });
             
@@ -155,7 +165,7 @@ router.get('/', async (req, res) => {
         }
     }
     
-    await GIFTED_MD_PAIR_CODE();
+    await WALLYJAYTECH_MD_PAIR_CODE();
 });
 
 module.exports = router;
