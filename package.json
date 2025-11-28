@@ -1,12 +1,12 @@
 {
-  "name": "larapair",
-  "version": "0.0.1",
+  "name": "WALLYJAYTECH-MD-SESSION",
+  "version": "1.0.0",
   "description": "A multi functional whatsapp bot Web paircode.",
   "main": "index.js",
   "scripts": {
-    "start": "pm2 start index.js --deep-monitoring --attach --name larapair",
-    "stop": "pm2 stop larapair",
-    "restart": "pm2 restart larapair"
+    "start": "pm2 start index.js --deep-monitoring --attach --name wallyjaytech",
+    "stop": "pm2 stop wallyjaytech",
+    "restart": "pm2 restart wallyjaytech"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "npm:wileys",
